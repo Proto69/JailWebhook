@@ -1,0 +1,16 @@
+main: "JailWebhook"
+name: "JailWebhook"
+author: "Proto68"
+api-version: 1.20
+version: 1.0
+
+commands:
+  jwreload:
+    description: Reloads the JailWebhook plugin configuration.
+    usage: /jwreload
+    permission: jailwebhook.reload
+
+permissions:
+  jailwebhook.reload:
+    description: Allows the user to reload the JailWebhook configuration.
+    default: op

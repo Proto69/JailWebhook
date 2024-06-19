@@ -1,0 +1,75 @@
+# The URL for the discord webhook
+webhookURL: " "
+
+# Use FIELDS (for different fields) or DESCRIPTION (for one whole message as description)
+format: "FIELDS"
+
+# Jail command on which to listen and get arguments
+command: "jail"
+
+# The permission, needed for the main /jail command (security reasons)
+# If no permission needed, leave blank space -> " "
+permission: " "
+
+# Text to show when there is no specified
+# reason in the command arguments
+no-reason-specified: "Не е посочена причина"
+
+# Title of the embed
+title:
+  # %nickname% -> gets the name of the jailed player
+  enable: true
+  text: "Нов затворник - %nickname%"
+
+# For embed with fields (option format: FIELDS)
+# Group names doesn't matter (reason, duration etc.)
+# Text order and content can be changed at wish
+fields:
+
+  # %reason% -> gets the reason for the jail (no, it doesn't return null) :D
+  reason:
+    enable: true
+    title: "Причина"
+    field: "%reason%"
+
+  # %duration% -> gets the duration of the jail
+  duration:
+    enable: true
+    title: "Време"
+    field: "%duration%"
+
+  # %cell% -> gets the number of the cell that the player is jailed in
+  cell:
+    enable: true
+    title: "Килия"
+    field: "%cell%"
+
+  # %lockedBy% -> gets the name of the staff member who jailed the player
+  lockedBy:
+    enable: true
+    title: "Заключен от"
+    field: "%lockedBy%"
+
+# For embed with description (option format: DESCRIPTION)
+description:
+  # Handles all of the above placeholders
+  # For new line: \n
+  text: ""
+
+# Timestamp info
+timeStamp:
+  enable: true
+  format: "HH:mm:ss dd-MM-yyyy"
+
+  # For translation in the duration of the jail
+  day: "ден"
+  hour: "час"
+  minute: "минута"
+  second: "секунда"
+  days: "дена"
+  hours: "часа"
+  minutes: "минути"
+  seconds: "секунди"
+
+# For the color of the embed (needs HEX colors)
+color: "#E83842"
