@@ -20,7 +20,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Objects;
 
-public class SendEmbedCommand implements Listener {
+public class CommandListener implements Listener {
+    private final FileConfiguration config;
     private final String webhookUrl;
     private final String permission;
     private final String format;
@@ -43,9 +44,9 @@ public class SendEmbedCommand implements Listener {
     private Boolean hasCell = false;
     private final String cellTitle;
     private final String cellField;
-    private final FileConfiguration config;
 
-    public SendEmbedCommand(JavaPlugin plugin, String webhookUrl, String format, String title, String reasonTitle, String durationTitle, String cellTitle, String lockedByTitle, String reasonField, String durationField, String cellField, String lockedByField, Boolean hasTimestamp, String timestampFormat, Color color, String description, String permission) {
+    public CommandListener(JavaPlugin plugin, String webhookUrl, String format, String title, String reasonTitle, String durationTitle, String cellTitle, String lockedByTitle, String reasonField, String durationField, String cellField, String lockedByField, Boolean hasTimestamp, String timestampFormat, Color color, String description, String permission) {
+
         this.config = plugin.getConfig();
         this.webhookUrl = webhookUrl;
         this.color = color;
@@ -63,7 +64,7 @@ public class SendEmbedCommand implements Listener {
         this.cellField = cellField;
         this.cellTitle = cellTitle;
 
-        this.title = title;
+        this.title = config.getString("title.text");
         if (title != null)
             this.hasTitle = true;
 
@@ -190,7 +191,7 @@ public class SendEmbedCommand implements Listener {
         try {
             wh.execute();
         } catch (MalformedURLException e) {
-            System.out.println("[JailWebhook] Invalid webhook URL");
+            sender.sendMessage("Invalid webhook URL");
         } catch (IOException e) {
             e.printStackTrace();
         }

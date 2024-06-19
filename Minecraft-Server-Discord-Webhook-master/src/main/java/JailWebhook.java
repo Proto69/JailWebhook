@@ -1,13 +1,8 @@
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-import org.bukkit.event.server.ServerCommandEvent;
-import org.bukkit.plugin.InvalidPluginException;
-import org.bukkit.plugin.PluginLoader;
-import org.bukkit.plugin.PluginManager;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.awt.*;
-import java.io.File;
 import java.util.Objects;
 
 /**
@@ -22,17 +17,22 @@ import java.util.Objects;
  */
 public class JailWebhook extends JavaPlugin {
 
-    private SendEmbedCommand oldListener = null;
-
     @Override
     public void onEnable() {
         // Copy the config.yml in the plugin configuration folder if it doesn't exist.
-        this.saveDefaultConfig();
+        saveDefaultConfig();
 
+        registerEvents();
+        registerCommands();
+
+        getLogger().info("JailWebhook is enabled!");
+    }
+
+    private void registerEvents(){
         FileConfiguration config = this.getConfig();
         String url = config.getString("webhookURL");
 
-        
+
         String permission = config.getString("permission");
 
         Color color = null;
@@ -85,24 +85,20 @@ public class JailWebhook extends JavaPlugin {
         } catch (NumberFormatException e) {
             getLogger().severe("Invalid color format, use hex format, e.g. #FF5733");
         }
-        SendEmbedCommand listener = new SendEmbedCommand(this, url , format, titleText, reasonTitle, durationTitle, cellTitle, lockedTitle, reasonField, durationField, cellField, lockedField, timestampEnable, timestampFormat, color, description, permission);
-        if (oldListener != null)
-            unregisterEventListener(oldListener);
+
+        CommandListener listener = new CommandListener(this, url , format, titleText, reasonTitle, durationTitle, cellTitle, lockedTitle, reasonField, durationField, cellField, lockedField, timestampEnable, timestampFormat, color, description, permission);
         getServer().getPluginManager().registerEvents(listener, this);
-
-        oldListener = listener;
-        
-        getCommand("jwreload").setExecutor(new ReloadCommand(this));
-
-        if (oldListener == null)
-            getLogger().info("JailWebhook is enabled!");
-        else 
-            getLogger().info("JailWebhook is reloaded!");
     }
 
-    private void unregisterEventListener(SendEmbedCommand listener) {
-        PlayerCommandPreprocessEvent.getHandlerList().unregister(listener);
-        ServerCommandEvent.getHandlerList().unregister(listener);
+    private void registerCommands(){
+        Objects.requireNonNull(getCommand("jwreload")).setExecutor(new ReloadCommand(this));
     }
 
+    public void reload(){
+        reloadConfig();
+
+        HandlerList.unregisterAll(this);
+
+        registerEvents();
+    }
 }
