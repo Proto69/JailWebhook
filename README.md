@@ -7,7 +7,9 @@ Simple minecraft plugin, sending discord embed on jail command
 ## Features
 * Customizable messages
 * Every message can be disabled/enabled
-* Message on jail command
+* Start command customization (instead of `jail` it could be anything)
+* Message on jail command with format:
+> /jail `nick` `duration` `cell` r:`reason handling spaces`
 
 
 ## Installation
