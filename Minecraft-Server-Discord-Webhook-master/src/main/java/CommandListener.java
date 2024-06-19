@@ -44,11 +44,13 @@ public class CommandListener implements Listener {
     private Boolean hasCell = false;
     private final String cellTitle;
     private final String cellField;
+    private String command;
 
     // Object constructor with all variables from the config.yml
     public CommandListener(JavaPlugin plugin, String webhookUrl, String format, String title, String reasonTitle, String durationTitle, String cellTitle, String lockedByTitle, String reasonField, String durationField, String cellField, String lockedByField, Boolean hasTimestamp, String timestampFormat, Color color, String description, String permission) {
 
         this.config = plugin.getConfig();
+        this.command = config.getString("command");
         this.webhookUrl = webhookUrl;
         this.color = color;
         this.format = format;
@@ -98,7 +100,7 @@ public class CommandListener implements Listener {
         String message = event.getMessage();
 
         // Checking if the command is the command from the config.yml
-        if (message.startsWith("/" + config.getString("command"))) {
+        if (message.startsWith("/" + command)) {
 
             // Checking if the player has the permission from the config.yml
             if (Objects.equals(permission, " ") || event.getPlayer().hasPermission(permission))
@@ -112,7 +114,7 @@ public class CommandListener implements Listener {
         String message = event.getCommand();
 
         // Checking if the command is the command from the config.yml
-        if (message.startsWith(Objects.requireNonNull(config.getString("command"))))
+        if (message.startsWith(Objects.requireNonNull(command)))
             handleCommand(event.getSender(), message);
     }
 
@@ -129,10 +131,19 @@ public class CommandListener implements Listener {
         Player player = null;
         if (sender instanceof Player) player = (Player) sender;
 
+        // Splitting the command into an array by " "
+        String[] commandWords = command.split(" ");
+
+        // Get the last word from the command
+        String lastWord = commandWords[commandWords.length - 1];
+
+        // Getting the index of the last word
+        int index = getIndexOfLastWord(args, lastWord);
+
         // Getting all the arguments from the command
-        String nickname = args[1];
-        String duration = convertDuration(args[2]);
-        String cell = args[3];
+        String nickname = args[index + 1];
+        String duration = convertDuration(args[index + 2]);
+        String cell = args[index + 3];
 
         // Setting the reason to the default from config.yml
         String reason = config.getString("no-reason-specified");
@@ -246,7 +257,15 @@ public class CommandListener implements Listener {
     // The " " at the end is for handling 3d1h for example to be:
     // 3 days 1 hour instead of 3 days1 hour
     public String convertDuration(String duration) {
-        return duration.replaceAll("(?<!\\d)1d", "1 " + config.getString("timeStamp.day" + " ")).replaceAll("(?<!\\d)1h", "1 " + config.getString("timeStamp.hour" + " ")).replaceAll("(?<!\\d)1m", "1 " + config.getString("timeStamp.minute" + " ")).replaceAll("(?<!\\d)1s", "1 " + config.getString("timeStamp.second" + " ")).replaceAll("d", " " + config.getString("timeStamp.days" + " ")).replaceAll("h", " " + config.getString("timeStamp.hours" + " ")).replaceAll("m", " " + config.getString("timeStamp.minutes" + " ")).replaceAll("s", " " + config.getString("timeStamp.seconds" + " "));
+        return duration
+                .replaceAll("(?<!\\d)1d", "1 " + config.getString("timeStamp.day") + " ")
+                .replaceAll("(?<!\\d)1h", "1 " + config.getString("timeStamp.hour") + " ")
+                .replaceAll("(?<!\\d)1m", "1 " + config.getString("timeStamp.minute") + " ")
+                .replaceAll("(?<!\\d)1s", "1 " + config.getString("timeStamp.second") + " ")
+                .replaceAll("d", " " + config.getString("timeStamp.days") + " ")
+                .replaceAll("h", " " + config.getString("timeStamp.hours") + " ")
+                .replaceAll("m", " " + config.getString("timeStamp.minutes") + " ")
+                .replaceAll("s", " " + config.getString("timeStamp.seconds") + " ");
     }
 
 
@@ -256,6 +275,16 @@ public class CommandListener implements Listener {
             template = template.replace("%" + entry.getKey() + "%", entry.getValue());
         }
         return template;
+    }
+
+    // Gets the index of the last word from the command
+    public static int getIndexOfLastWord(String[] wordsArray, String lastWord) {
+        for (int i = 0; i < wordsArray.length; i++) {
+            if (wordsArray[i].equals(lastWord)) {
+                return i;
+            }
+        }
+        return -1; // Return -1 if the word is not found
     }
 
 }
