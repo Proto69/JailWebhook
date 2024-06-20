@@ -1,3 +1,5 @@
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -22,15 +24,18 @@ public class JailWebhook extends JavaPlugin {
         // Copy the config.yml in the plugin configuration folder if it doesn't exist.
         saveDefaultConfig();
 
-        // Registering the events and commands
-        registerEvents();
-        registerCommands();
+        boolean enable = getConfig().getBoolean("enable");
+        if (enable) {
+            // Registering the events and commands
+            registerEvents();
+            registerCommands();
 
-        // Logging the successful enabling of the plugin
-        getLogger().info("JailWebhook is enabled!");
+            // Logging the successful enabling of the plugin
+            getLogger().info("JailWebhook is enabled!");
+        }
     }
 
-    private void registerEvents(){
+    private void registerEvents() {
         // Getting the config.yml
         FileConfiguration config = this.getConfig();
 
@@ -108,26 +113,54 @@ public class JailWebhook extends JavaPlugin {
         }
 
         // Creates the command listener with all the values from the config.yml
-        CommandListener listener = new CommandListener(this, url , format, titleText, reasonTitle, durationTitle, cellTitle, lockedTitle, reasonField, durationField, cellField, lockedField, timestampEnable, timestampFormat, color, description, permission);
+        CommandListener listener = new CommandListener(this, url, format, titleText, reasonTitle, durationTitle, cellTitle, lockedTitle, reasonField, durationField, cellField, lockedField, timestampEnable, timestampFormat, color, description, permission);
 
         // Registers the listener
         getServer().getPluginManager().registerEvents(listener, this);
     }
 
-    private void registerCommands(){
+    private void registerCommands() {
         // Registers the reload command
-        Objects.requireNonNull(getCommand("jwreload")).setExecutor(new ReloadCommand(this));
+        this.getCommand("jw").setExecutor(this);
     }
 
     // Reloads the plugin
-    public void reload(){
+    public void reload() {
         // Reloads the configuration
         reloadConfig();
 
         // Unregisters all listeners
         HandlerList.unregisterAll(this);
 
-        // Registers all events
-        registerEvents();
+
+        if (getConfig().getBoolean("enable"))
+            // Registers all events
+            registerEvents();
+    }
+
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (command.getName().equalsIgnoreCase("jw")) {
+            if (args.length == 0) {
+                sender.sendMessage("Usage: /jw <subcommand>");
+                return true;
+            }
+
+            String subCommand = args[0].toLowerCase();
+
+            switch (subCommand) {
+                case "reload":
+                    ReloadCommand reload = new ReloadCommand(this);
+                    reload.onCommand(sender, command, label, args);
+                    break;
+                default:
+                    sender.sendMessage("Unknown subcommand. Usage: /jw <reload>");
+                    break;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 }

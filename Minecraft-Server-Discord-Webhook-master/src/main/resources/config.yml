@@ -1,3 +1,7 @@
+# If the listeners should be enabled
+# The /jw reload command will be valid
+enable: true
+
 # The URL for the discord webhook
 webhookURL: " "
 

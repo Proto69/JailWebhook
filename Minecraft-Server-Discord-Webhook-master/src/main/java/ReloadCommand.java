@@ -11,22 +11,17 @@ public class ReloadCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        // Checking if the command is correct
-        if (command.getName().equalsIgnoreCase("jwreload")) {
-
-            // Checking the sender for required permission
-            if (sender.hasPermission("jailwebhook.reload")) {
-                // Getting the time before the reload
-                long before = System.currentTimeMillis();
-                // Reloading the plugin
-                plugin.reload();
-                // Getting the time after the reload
-                long after = System.currentTimeMillis();
-                // Sending message with the total time for the reload
-                sender.sendMessage("Successfully reloaded JailWebhook in " + (after - before) + "ms!");
-            }
-            return true;
+        // Checking the sender for required permission
+        if (sender.hasPermission("jailwebhook.reload")) {
+            // Getting the time before the reload
+            long before = System.currentTimeMillis();
+            // Reloading the plugin
+            plugin.reload();
+            // Getting the time after the reload
+            long after = System.currentTimeMillis();
+            // Sending message with the total time for the reload
+            sender.sendMessage("Successfully reloaded JailWebhook in " + (after - before) + "ms!");
         }
-        return false;
+        return true;
     }
 }
