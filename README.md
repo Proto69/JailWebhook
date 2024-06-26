@@ -7,8 +7,13 @@ Simple minecraft plugin, sending discord embed on jail command
 ## Features
 * Customizable messages
 * Every message can be disabled/enabled
+* Database could be setup to save the data
+* Commands for listing all data from database (including filters)
+> /jw all \
+> /jw all `active` `true/false`\
+> /jw all `prisoner_name/jailed_by` `nickname`
 * Start command customization (instead of `jail` it could be anything)
-* Message on jail command with format:
+* Discord embed message on jail command with format:
 > /jail `nick` `duration` `cell` r:`reason handling spaces`
 
 
@@ -18,7 +23,7 @@ Simple minecraft plugin, sending discord embed on jail command
 3. Start the server and a folder `JailWebhook` will be generated with a `config.yml` file.
 4. Add the Webhook URL to the top of the file, if you are unsure how to get one reffer to [this page](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks)
 5. Configure the plugins using `config.yml` to your needs
-6. Reload the plugin using `/jwreload`
+6. Reload the plugin using `/jw reload`
 
 
 ## Credits
