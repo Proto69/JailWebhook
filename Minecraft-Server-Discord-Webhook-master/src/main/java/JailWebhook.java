@@ -5,6 +5,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.awt.*;
+import java.sql.SQLException;
 import java.util.Objects;
 
 /**
@@ -19,21 +20,42 @@ import java.util.Objects;
  */
 public class JailWebhook extends JavaPlugin {
 
+    private DatabaseManager databaseManager;
     @Override
     public void onEnable() {
         // Copy the config.yml in the plugin configuration folder if it doesn't exist.
         saveDefaultConfig();
 
         boolean enable = getConfig().getBoolean("enable");
+
         if (enable) {
             // Registering the events and commands
             registerEvents();
             registerCommands();
 
+            // Database setup
+            try {
+                databaseEnable();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+
             // Logging the successful enabling of the plugin
             getLogger().info("JailWebhook is enabled!");
+        } else {
+            getLogger().warning("JailWebhook is not enabled in the config!");
         }
     }
+
+    @Override
+    public void onDisable() {
+        databaseDisable();
+    }
+
+    public DatabaseManager getDatabaseManager(){
+        return databaseManager;
+    }
+
 
     private void registerEvents() {
         // Getting the config.yml
@@ -42,7 +64,8 @@ public class JailWebhook extends JavaPlugin {
         // Retrieving all values from the config.yml
         String url = config.getString("webhookURL");
 
-        String permission = config.getString("permission");
+        String jailPermission = config.getString("permissions.jail");
+        String unJailPermission = config.getString("permissions.unjail");
 
         Color color = null;
         String hexColor = config.getString("color");
@@ -113,29 +136,65 @@ public class JailWebhook extends JavaPlugin {
         }
 
         // Creates the command listener with all the values from the config.yml
-        CommandListener listener = new CommandListener(this, url, format, titleText, reasonTitle, durationTitle, cellTitle, lockedTitle, reasonField, durationField, cellField, lockedField, timestampEnable, timestampFormat, color, description, permission);
+        JailCommandListener jailListener = new JailCommandListener(this, url, format, titleText, reasonTitle, durationTitle, cellTitle, lockedTitle, reasonField, durationField, cellField, lockedField, timestampEnable, timestampFormat, color, description, jailPermission);
+        UnJailCommandListener unJailListener = new UnJailCommandListener(this, unJailPermission);
 
         // Registers the listener
-        getServer().getPluginManager().registerEvents(listener, this);
+        getServer().getPluginManager().registerEvents(jailListener, this);
+        getServer().getPluginManager().registerEvents(unJailListener, this);
     }
 
     private void registerCommands() {
         // Registers the reload command
-        this.getCommand("jw").setExecutor(this);
+        Objects.requireNonNull(this.getCommand("jw")).setExecutor(this);
+        Objects.requireNonNull(this.getCommand("jw")).setTabCompleter(new PluginTabCompleter());
+    }
+
+    private void databaseEnable() throws SQLException {
+        databaseManager = new DatabaseManager(getConfig(), getLogger());
+        try {
+            databaseManager.connect();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        FileConfiguration config = getConfig();
+        String query = "CREATE EVENT update_" + config.getString("database.table") + "\n" +
+                "ON SCHEDULE EVERY " + config.getString("database.update-period") + "\n" +
+                "DO\n" +
+                "  UPDATE " + config.getString("database.table") + "\n" +
+                "  SET active = 0\n" +
+                "  WHERE jailed_to < DATE_ADD(NOW(), INTERVAL " + (Integer.parseInt(config.getString("database.time-difference")) * 60) + " MINUTE);";
+        databaseManager.modifyEvent("update_" + config.getString("database.table"), query);
+    }
+
+    private void databaseDisable(){
+        try {
+            databaseManager.disconnect();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // Reloads the plugin
-    public void reload() {
+    public void reload() throws SQLException {
         // Reloads the configuration
         reloadConfig();
 
         // Unregisters all listeners
         HandlerList.unregisterAll(this);
 
+        // Disconnect database
+        databaseDisable();
 
         if (getConfig().getBoolean("enable"))
+        {
             // Registers all events
             registerEvents();
+
+            // Connect the database
+            databaseEnable();
+        }
+
     }
 
     @Override
@@ -153,8 +212,12 @@ public class JailWebhook extends JavaPlugin {
                     ReloadCommand reload = new ReloadCommand(this);
                     reload.onCommand(sender, command, label, args);
                     break;
+                case "all":
+                    ListAllCommand listAllCommand = new ListAllCommand(this);
+                    listAllCommand.onCommand(sender, command, label, args);
+                    break;
                 default:
-                    sender.sendMessage("Unknown subcommand. Usage: /jw <reload>");
+                    sender.sendMessage("Unknown subcommand.");
                     break;
             }
 

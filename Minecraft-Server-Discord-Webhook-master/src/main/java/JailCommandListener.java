@@ -3,6 +3,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 
+import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -11,7 +13,6 @@ import java.util.Map;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.time.Instant;
 
@@ -19,9 +20,13 @@ import java.awt.Color;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public class CommandListener implements Listener {
+
+public class JailCommandListener implements Listener {
     private final FileConfiguration config;
+    private final JailWebhook plugin;
     private final String webhookUrl;
     private final String permission;
     private final String format;
@@ -47,10 +52,11 @@ public class CommandListener implements Listener {
     private String command;
 
     // Object constructor with all variables from the config.yml
-    public CommandListener(JavaPlugin plugin, String webhookUrl, String format, String title, String reasonTitle, String durationTitle, String cellTitle, String lockedByTitle, String reasonField, String durationField, String cellField, String lockedByField, Boolean hasTimestamp, String timestampFormat, Color color, String description, String permission) {
+    public JailCommandListener(JailWebhook plugin, String webhookUrl, String format, String title, String reasonTitle, String durationTitle, String cellTitle, String lockedByTitle, String reasonField, String durationField, String cellField, String lockedByField, Boolean hasTimestamp, String timestampFormat, Color color, String description, String permission) {
 
+        this.plugin = plugin;
         this.config = plugin.getConfig();
-        this.command = config.getString("command");
+        this.command = config.getString("commands.jail");
         this.webhookUrl = webhookUrl;
         this.color = color;
         this.format = format;
@@ -103,8 +109,10 @@ public class CommandListener implements Listener {
         if (message.startsWith("/" + command)) {
 
             // Checking if the player has the permission from the config.yml
-            if (Objects.equals(permission, " ") || event.getPlayer().hasPermission(permission))
-                handleCommand(event.getPlayer(), message);
+            if (Objects.equals(permission, " ") || event.getPlayer().hasPermission(permission)){
+                this.command = this.command.replace("/", "");
+                handleCommand(event.getPlayer(), message.replace("/", ""));
+            }
         }
     }
 
@@ -150,10 +158,14 @@ public class CommandListener implements Listener {
 
         // Checking if the command has the reason in its args
         // and changes the reason
-        if (args.length > 4) reason = String.join(" ", args).split("r:", 2)[1].trim();
+        try {
+            if (args.length > 4) reason = String.join(" ", args).split("r:", 2)[1].trim();
 
-        // Checks if the reason from the command is empty and sets the default from config.yml
-        if (Objects.equals(reason, "")) reason = config.getString("no-reason-specified");
+            // Checks if the reason from the command is empty and sets the default from config.yml
+            if (Objects.equals(reason, "")) reason = config.getString("no-reason-specified");
+        } catch (IndexOutOfBoundsException e){
+            reason = config.getString("no-reason-specified");
+        }
 
         // Creating the webhook and the embed object
         DiscordWebhook wh = new DiscordWebhook(webhookUrl);
@@ -232,11 +244,10 @@ public class CommandListener implements Listener {
         // Sets embed color
         embed.setColor(color);
 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(timestampFormat).withZone(ZoneId.systemDefault());
+        String footerText = formatter.format(Instant.now());
         // Adds timestamp if it is enabled in the config.yml
         if (hasTimestamp) {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(timestampFormat).withZone(ZoneId.systemDefault());
-            String footerText = formatter.format(Instant.now());
-
             embed.setFooter(footerText, null);
         }
 
@@ -251,6 +262,79 @@ public class CommandListener implements Listener {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        duration = args[index + 2];
+
+        LocalDateTime resultDateTime = addDurationToCurrentDate(duration);
+
+        formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
+        String formattedCurrentTime = formatter.format(Instant.now());
+        String jailedDuration = formatter.format(resultDateTime);
+
+        String databaseReason = null;
+        try {
+            if (args.length > 4) databaseReason = String.join(" ", args).split("r:", 2)[1].trim();
+
+            // Checks if the reason from the command is empty and sets the default from config.yml
+            if (Objects.equals(databaseReason, "")) databaseReason = null;
+        } catch (IndexOutOfBoundsException e){
+            databaseReason = null;
+        }
+
+        // If active, player is not unjailed
+        // If not active, player is unjailed and the unjailed_at can be changed to
+        // the nick of the player who unjailed the prisoner or the `Expired` if it
+        // is just an expired jail
+        String[] data = new String[] {nickname, databaseReason, (player != null) ? player.getName() : "Console", "Expired", formattedCurrentTime, jailedDuration, "1"};
+
+
+        try {
+            plugin.getDatabaseManager().uploadJailData(data, sender);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    public static LocalDateTime addDurationToCurrentDate(String duration) {
+        // Current date and time
+        LocalDateTime currentDateTime = LocalDateTime.now();
+
+        // Regular expressions to extract days, hours, minutes, and seconds
+        Pattern pattern = Pattern.compile("(\\d+)([dhms])");
+        Matcher matcher = pattern.matcher(duration);
+
+        long days = 0;
+        long hours = 0;
+        long minutes = 0;
+        long seconds = 0;
+
+        // Extract the values from the duration string
+        while (matcher.find()) {
+            int value = Integer.parseInt(matcher.group(1));
+            String unit = matcher.group(2);
+
+            switch (unit) {
+                case "d":
+                    days = value;
+                    break;
+                case "h":
+                    hours = value;
+                    break;
+                case "m":
+                    minutes = value;
+                    break;
+                case "s":
+                    seconds = value;
+                    break;
+            }
+        }
+
+        // Add the parsed duration to the current date and time
+        return currentDateTime.plusDays(days)
+                .plusHours(hours)
+                .plusMinutes(minutes)
+                .plusSeconds(seconds);
     }
 
     // Replacing d, h, m and s with the words from the config.yml
@@ -269,7 +353,7 @@ public class CommandListener implements Listener {
     }
 
 
-    //    Replacing the placeholders like %nickname% with their values
+    // Replacing the placeholders like %nickname% with their values
     public static String replacePlaceholders(String template, Map<String, String> variables) {
         for (Map.Entry<String, String> entry : variables.entrySet()) {
             template = template.replace("%" + entry.getKey() + "%", entry.getValue());
@@ -286,6 +370,5 @@ public class CommandListener implements Listener {
         }
         return -1; // Return -1 if the word is not found
     }
-
 }
 

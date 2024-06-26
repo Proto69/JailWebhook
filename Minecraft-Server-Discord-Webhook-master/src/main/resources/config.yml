@@ -8,12 +8,16 @@ webhookURL: " "
 # Use FIELDS (for different fields) or DESCRIPTION (for one whole message as description)
 format: "FIELDS"
 
-# Jail command on which to listen and get arguments
-command: "jail"
+# Commands on which to listen and get arguments
+commands:
+  jail: "jail"
+  unjail: "unjail"
 
-# The permission, needed for the main /jail command (security reasons)
+# The permission, needed for the /jail and /unjail commands (security reasons)
 # If no permission needed, leave blank space -> " "
-permission: " "
+permissions:
+  jail: " "
+  unjail: " "
 
 # Text to show when there is no specified
 # reason in the command arguments
@@ -77,3 +81,22 @@ timeStamp:
 
 # For the color of the embed (needs HEX colors)
 color: "#E83842"
+
+# Info for the database
+database:
+  address: " "
+  database: " "
+  username: " "
+  password: " "
+  table: " "
+
+  # Time difference between the database and the system
+  # You can check it by executing
+  # SELECT TIMEDIFF(NOW(), UTC_TIMESTAMP);
+  # in the database manager
+  # If it's 3:30:00 type: 3.5
+  time-difference: " "
+
+  # The period for updating the active state of a jail
+  # Could be 1 SECOND, 15 MINUTE, 2 HOUR etc.
+  update-period: " "

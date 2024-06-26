@@ -2,6 +2,8 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
+import java.sql.SQLException;
+
 public class ReloadCommand implements CommandExecutor {
     private final JailWebhook plugin;
 
@@ -16,7 +18,11 @@ public class ReloadCommand implements CommandExecutor {
             // Getting the time before the reload
             long before = System.currentTimeMillis();
             // Reloading the plugin
-            plugin.reload();
+            try {
+                plugin.reload();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
             // Getting the time after the reload
             long after = System.currentTimeMillis();
             // Sending message with the total time for the reload

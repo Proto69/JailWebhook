@@ -13,3 +13,6 @@ permissions:
   jailwebhook.reload:
     description: Allows the user to reload the JailWebhook configuration.
     default: op
+  jailwebhook.all:
+    description: Allows the user to list all data from the connected database.
+    default: op
