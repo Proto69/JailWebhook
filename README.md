@@ -1,6 +1,6 @@
 # Minecraft Jail Discord Webhook (Bukkit)
 
-Simple minecraft plugin, sending discord embed on jail command
+Simple minecraft plugin, sending discord embed and saving data to database on jail command
 
 >Feel free to alter the code of this plugin to your needs
 
