@@ -22,7 +22,7 @@ Simple minecraft plugin, sending discord embed and saving data to database on ja
 2. Drop the `.jar` file in your `plugins` folder.
 3. Start the server and a folder `JailWebhook` will be generated with a `config.yml` file.
 4. Add the Webhook URL to the top of the file, if you are unsure how to get one reffer to [this page](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks)
-5. Configure the plugins using `config.yml` to your needs
+5. Configure the plugin using `config.yml` to your needs
 6. Reload the plugin using `/jw reload`
 
 
